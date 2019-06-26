@@ -1,6 +1,35 @@
 'use strict';
 
 var mapSection = document.querySelector('.map');
+var mapPinsBlock = document.querySelector('.map__pins');
+var pinTemplate = document.querySelector('#pin').content.querySelector('.map__pin');
+
+var disablePage = function (isDisable) {
+  var advertForm = document.querySelector('.ad-form');
+  var advertFormFieldsets = advertForm.querySelectorAll('fieldset');
+  var mapFiltersForm = document.querySelector('.map__filters');
+  var mapFiltersSelects = mapFiltersForm.querySelectorAll('select');
+  var mapFiltersFieldsets = mapFiltersForm.querySelectorAll('fieldset');
+
+  var setFieldsState = function (fields) {
+    for (var i = 0; i < fields.length; i++) {
+      fields[i].disabled = isDisable;
+    }
+  };
+
+  setFieldsState(advertFormFieldsets);
+  setFieldsState(mapFiltersSelects);
+  setFieldsState(mapFiltersFieldsets);
+
+  if (isDisable) {
+    mapSection.classList.add('map--faded');
+  } else {
+    mapSection.classList.remove('map--faded');
+    advertForm.classList.remove('ad-form--disabled');
+  }
+};
+
+disablePage(true);
 
 var ADVERTS_COUNT = 8;
 var OFFERS = ['palace', 'flat', 'house', 'bungalo'];
@@ -51,14 +80,11 @@ var generateUsersAdverts = function () {
   return advertsArray;
 };
 
-var usersAdvertsData = generateUsersAdverts();
-var pinTemplate = document.querySelector('#pin').content.querySelector('.map__pin');
-
 var generatePinDomElement = function (pinData) {
   var pinElement = pinTemplate.cloneNode(true);
   var pinImage = pinElement.querySelector('img');
   pinElement.style.left = pinData.location.x - (OTHER_USERS_PIN_DIMENSIONS.width / 2) + 'px';
-  pinElement.style.top = pinData.location.y + OTHER_USERS_PIN_DIMENSIONS.height + 'px';
+  pinElement.style.top = pinData.location.y - OTHER_USERS_PIN_DIMENSIONS.height + 'px';
   pinImage.src = pinData.author.avatar;
   pinImage.alt = pinData.offer.type;
 
@@ -75,10 +101,24 @@ var generateFilledPinsFragment = function (advertsData) {
   return fragment;
 };
 
-var pinsFragment = generateFilledPinsFragment(usersAdvertsData);
-var mapPinsBlock = document.querySelector('.map__pins');
+var mainPinBlock = document.querySelector('.map__pin--main');
 
-mapSection.classList.remove('map--faded');
-mapPinsBlock.appendChild(pinsFragment);
+var getMainPicCoordinates = function () {
+  var mainPinCoordinate = {
+    x: Math.round(mainPinBlock.offsetLeft + (mainPinBlock.clientWidth / 2)),
+    y: Math.round(mainPinBlock.offsetTop + (mainPinBlock.clientHeight / 2))
+  };
 
+  return mainPinCoordinate.x + ', ' + mainPinCoordinate.y;
+};
+var addressInput = document.querySelector('#address');
+addressInput.value = getMainPicCoordinates();
 
+mainPinBlock.addEventListener('click', function () {
+  disablePage(false);
+
+  var usersAdvertsData = generateUsersAdverts();
+  var filledPinsFragment = generateFilledPinsFragment(usersAdvertsData);
+
+  mapPinsBlock.appendChild(filledPinsFragment);
+});
